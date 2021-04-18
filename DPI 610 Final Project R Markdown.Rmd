@@ -1,0 +1,250 @@
+---
+title: "DPI 610 Final Project R Markdown"
+author: "Luke Jordan"
+date: "4/12/2021"
+output: pdf_document
+---
+
+```{r}
+## cleaning datasets for Georgia
+
+dataverse_2 <- read.csv("dataverse_files (2)/1976-2018-house3.csv")
+ga_house_dataverse_2 <- subset(dataverse_2, state == "GEORGIA")
+
+dataverse_3 <- read.csv("dataverse_files (3)/2016-precinct-senate.csv")
+ga_dataverse_3 <- subset(dataverse_3, state == "Georgia")
+
+ga_turnout_demo_2018 <- read.csv("Edit_GA_Voting_Dem_2019.csv")
+
+election_2018 <- read.csv("election-context-2018.csv")
+ga_election_2018 <- subset(election_2018, state == "Georgia")
+
+```
+What's in the new Georgia voting law (https://global-factiva-com.ezp-prod1.hul.harvard.edu/ha/default.aspx#./!?&_suid=161825923530208684332934397712):
+
+  - new stricter ID requirements for absentee ballots
+      - the elector has to print the number of their Georgia license number of identification card on their absentee ballot
+      - illegal for absentee ballot applications to be mailed out to all voters
+      
+  - the number of drop boxes were limited
+      - one drop box for every 100k voters or one drop box for the number of advance voting locations in the country
+            - there were 94 elections for the 2020 election in Fulton, Cobb, DeKalb, and Gwinnett counties (the four counties that make up the majority of Atlanta); with this new law, there will now be 23 drop boxes
+      - drop boxes will be closed when advance voting is not being conducted, and they will be placed in government buildings or early-voting sites (thus not open during non-business hours)
+      
+  - mobile voting centers are outlawed unless there is some sort of emergency
+      - 11,200 people voted at the two mobile voting centers in Fulton County in November of 2020
+      - the only way for this practice to be carried out in the future is if a state of emergency is declared by the government, which is highly unlikely
+      
+  - there are new strict laws on early voting that describe that voting will be conducted from 9 AM to 5 PM, with very few exceptions
+      - this hurts those who work daytime hours or who are unable to take time off of work in the middle of the day to vote
+      - giving food and water to voters is a misdemeanor
+      - it is now more challenging to extend the hours of voting, as they only may be extended by a judge
+      
+```{r}
+# VOTER ID 
+
+## Iowa data from Ballotpedia.com (https://ballotpedia.org/Analysis_of_absentee/mail-in_voting,_2016-2018)
+
+iowa_2016_2018 <- matrix(c(1581371, 646313, 1334279, 
+                                    310563))
+rownames(iowa_2016_2018) <- c("2016 Total Turnout", 
+                                       "2016 Abs Votes",
+                                       "2018 Total Turnout",
+                                       "2018 Abs Votes")
+colnames(iowa_2016_2018) <- c("Iowa")
+iowa_2016_2018 <- as.table(iowa_2016_2018)
+iowa_2016_2018
+
+iowa_abs_perc_2016 <- iowa_2016_2018[2,1] / iowa_2016_2018[1,1]
+iowa_abs_perc_2018 <- iowa_2016_2018[4,1] / iowa_2016_2018[3,1]
+
+iowa_abs_perc_diff <- iowa_abs_perc_2016 - iowa_abs_perc_2018
+
+iowa_turnout_perc_change <- (iowa_2016_2018[3,1]-iowa_2016_2018[1,1])/
+  iowa_2016_2018[1,1]
+
+## Georgia data from Ballotpedia.com (https://ballotpedia.org/Analysis_of_absentee/mail-in_voting,_2016-2018)
+
+georgia_2020 <- matrix(c(4999960, 1323748))
+rownames(georgia_2020) <- c("2020 Total Turnout", 
+                                       "2020 Abs Votes")
+colnames(georgia_2020) <- c("Georgia")
+georgia_2020 <- as.table(georgia_2020)
+georgia_2020
+
+georgia_abs_perc_2020 <- georgia_2020[2,1] / georgia_2020[1,1]
+
+georgia_proj_total_votes <- (1+iowa_turnout_perc_change)*georgia_2020[1,1]
+georgia_proj_total_votes
+
+georgia_proj_abs_votes <- (1-iowa_abs_perc_diff)*georgia_2020[2,1]
+georgia_proj_abs_votes
+
+## Iowa + Georgia
+
+georgia_2022 <- matrix(c(4999960, 1323748, 4218707, 1090838))
+rownames(georgia_2022) <- c("2020 Total Turnout", "2020 Abs Votes",
+                            "2022 Total Turnout", "2022 Abs Votes")
+colnames(georgia_2022) <- c("Georgia")
+georgia_2022 <- as.table(georgia_2022)
+georgia_2022
+
+iowa_and_georgia <- matrix(c(1581371, 4999960, 646313, 1323748,
+                         1334279, 4218707, 310563, 1090838), 
+                         ncol=2,byrow = TRUE)
+rownames(iowa_and_georgia) <- c("Total Turnout Before Law", 
+                                "Abs Turnout Before Law",
+                                "Total Turnout After Law", 
+                                "Abs Turnout After Law")
+colnames(iowa_and_georgia) <- c("Iowa", "Georgia")
+iowa_and_georgia <- as.table(iowa_and_georgia)
+iowa_and_georgia
+
+barplot(iowa_and_georgia, beside = T, ylim = c(300000,5000000),
+        col = c("aquamarine3", "deepskyblue3", "darkolivegreen3", "coral3"),
+        main = "Effect of Absentee Voter ID Laws on Voter Turnout",
+        sub = "Figure 1")
+legend(4000000, legend = c("Total Turnout Before Law", "Abs Turnout Before Law",
+       "Total Turnout After Law", "Abs Turnout After Law"), 
+       fill=c("aquamarine3", "deepskyblue3", "darkolivegreen3", "coral3"), 
+       cex = 1)
+
+
+```
+Georgia law: "A Georgia state driver's license number, ID card number, date of birth and the last four digits of a social security number or another approved form of identification must be printed on the outside of an absentee ballot" (https://www.usatoday.com/story/news/politics/2021/04/10/georgia-new-voting-law-explained/7133587002/)
+
+In 2017, "Iowa’s governor signed a broad-based law that will require voter ID, restrict voter registration efforts, and impose new burdens on Election Day registration and early and absentee voting. Although not as restrictive as a North Carolina law that passed in 2013. (https://www.brennancenter.org/our-work/research-reports/voting-laws-roundup-2017)
+  - what I am going to do is look at the difference in absentee ballot turnout in 2016 and 2018 and see the difference, and then say that the changes in Iowa are directly proportional to the changes in Georgia. Unfortunately, I could not get county-level data for Iowa, but the data is here: (https://ballotpedia.org/Analysis_of_absentee/mail-in_voting,_2016-2018)
+  
+Although a decrease in absentee ballots does not technically indicate a decrease in overall voter turnout, a large decrease in absentee ballots demonstrates low civic engagement, which then leads to a decrease in total voter turnout. In Iowa. the decrease in voter turnout was 247,092 between 2016-2018, which is certainly substantial, even though 2016 was a presidential election year and 2018 was a midterm election year. Between the two elections (i.e. 2016 and 2018), the Iowa voter turnout decreased by 15.6%, which is actually a standard drop in voter participation (https://www.fairvote.org/voter_turnout). If we assume that Georgia's voter turnout is directly proportional to Iowa's, then the state's turnout in the 2022 midterm elections will be 15.6% lower than the turnout from the 2020 election. In the most recent presidential election, 4,999,960 votes were cast in Georgia (https://www.nytimes.com/interactive/2020/11/03/us/elections/results-georgia.html), with being absentee ballots amounting to 1,323,748 of those votes. (https://www.nbcnews.com/politics/2020-elections/georgia-results).
+
+
+```{r}
+# Projecting Number of Ballot Drop Boxes in Georgia in 2022
+
+georgia_2018_2020 <- matrix(c(6935816, 218858, 7638898, 1323748))
+rownames(georgia_2018_2020) <- c("2018 Registered Votes", "2018 Abs Votes",
+                            "2020 Registered Voters", "2020 Abs Votes")
+colnames(georgia_2018_2020) <- c("Georgia")
+georgia_2018_2020<- as.table(georgia_2018_2020)
+georgia_2018_2020
+
+ga_drop_boxes_2020_data <- Georgia2020DropBoxes
+ga_drop_boxes_2020 <- 
+  length(ga_drop_boxes_2020_data$`Ballot Drop Box Locations (Georgia 2020)`)
+
+## Method 1 
+
+ga_drop_box_to_voter_ratio_2020 <- ga_drop_boxes_2020/georgia_2018_2020[3,1]
+ga_drop_box_to_voter_ratio_2022 <- 1/100000
+ga_drop_box_to_voter_ratio_pct_change <- (ga_drop_box_to_voter_ratio_2022 - ga_drop_box_to_voter_ratio_2020)/ga_drop_box_to_voter_ratio_2020
+
+ga_drop_boxes_2022_1 <- (1+ga_drop_box_to_voter_ratio_pct_change)*
+  ga_drop_boxes_2020
+ga_drop_boxes_2022_1
+
+## Method 2
+
+ga_registered_voters_pct_change <- (georgia_2018_2020[3,1]-
+                                      georgia_2018_2020[1,1])/
+  georgia_2018_2020[1,1]
+ga_registered_voters_2022 <- (1+ga_registered_voters_pct_change)*
+  georgia_2018_2020[3,1]
+ga_drop_boxes_2022_2 <-ga_registered_voters_2022*ga_drop_box_to_voter_ratio_2022
+ga_drop_boxes_2022_2
+
+## Average of Methods 1 and 2
+
+avg_ga_drop_boxes_2022 <- (ga_drop_boxes_2022_1 + ga_drop_boxes_2022_2)/2
+avg_ga_drop_boxes_2022
+
+# Projecting Voter Turnout Based on Ballot Drop Boxes
+
+abs_votes_to_drop_box_ratio_2020 <- georgia_2018_2020[4,1] / ga_drop_boxes_2020
+
+ga_proj_drop_box_votes_2022 <- abs_votes_to_drop_box_ratio_2020 *
+  avg_ga_drop_boxes_2022 
+ga_proj_drop_box_votes_2022
+
+```
+
+"We find that a decrease of one mile to the nearest drop box increased the probability of voting by 0.64 percent." (https://onlinelibrary.wiley.com/doi/10.1111/ssqu.12853)
+
+New ballot box ratio (https://blogs.microsoft.com/on-the-issues/2021/03/31/why-we-are-concerned-about-georgias-new-election-law/)
+
+All 2020 ballot box locations (https://www.google.com/maps/d/u/0/viewer?usp=sharing&mid=12mP2xtRkBBgJq48WfZfUjoktDl0h9vq_)
+
+Georgia sq miles (https://www.netstate.com/states/tables/st_size.htm)
+
+We are assuming that every absentee ballot gets put into a drop box.
+
+      
+```{r}
+# VOTER ID 2
+
+
+## Dave's Redistricting Fulton County VAP 2019
+ga_vap_fulton_2019 <- matrix(c(328740, 28576, 338929, 34221, 3350, 170),
+                                    ncol=1, byrow = TRUE)
+colnames(ga_vap_fulton_2019) <- c("GA 2018 General Election VAP")
+rownames(ga_vap_fulton_2019) <- c("White", "Hispanic", "Black", 
+                                         "Asian", "Native", "Pacific")
+ga_vap_fulton_2019 <- as.table(ga_vap_fulton_2019)
+ga_vap_fulton_2019
+
+###knitr::kable(ga_voting_population_2019)
+
+## est turnout diff with strict voter ID laws using % from 2018 (GA SOS data), 
+## using voting population from 2019 for Fulton County (Dave's Redistricting),
+## and using differences with regard to voter ID laws from an academic paper
+
+### Black
+proj_black_t_fulton <- .01*ga_vap_fulton_2019[3,]*
+  ((ga_turnout_demo_2018[60,5] + ga_turnout_demo_2018[60,8])/2)
+proj_black_t_fulton
+
+proj_black_t_fulton_law <- .01*ga_vap_fulton_2019[3,]*
+   (((ga_turnout_demo_2018[60,5] + ga_turnout_demo_2018[60,8])/2) - 8.6)
+proj_black_t_fulton_law
+
+proj_black_t_fulton_diff <- proj_black_t_fulton - proj_black_t_fulton_law
+proj_black_t_fulton_diff 
+
+### Hispanic
+proj_hispanic_t_fulton <- .01*ga_vap_fulton_2019[2,]*
+   ((ga_turnout_demo_2018[60,32] + ga_turnout_demo_2018[60,35])/2) 
+proj_hispanic_t_fulton
+
+proj_hispanic_t_fulton_law <- .01*ga_vap_fulton_2019[2,]*
+  (((ga_turnout_demo_2018[60,32] + ga_turnout_demo_2018[60,35])/2) - 9.3)
+proj_hispanic_t_fulton_law
+
+proj_hispanic_t_fulton_diff <- proj_hispanic_t_fulton - proj_hispanic_t_fulton_law
+proj_hispanic_t_fulton_diff 
+
+### Asian American
+proj_asian_t_fulton <- .01*ga_vap_fulton_2019[4,]*
+   ((ga_turnout_demo_2018[60,23] + ga_turnout_demo_2018[60,26])/2) 
+proj_asian_t_fulton
+
+proj_asian_t_fulton_law <- .01*ga_vap_fulton_2019[4,]*
+  (((ga_turnout_demo_2018[60,23] + ga_turnout_demo_2018[60,26])/2) - 12.5)
+proj_asian_t_fulton_law
+
+proj_asian_t_fulton_diff <- proj_asian_t_fulton - proj_asian_t_fulton_law
+proj_asian_t_fulton_diff
+
+### total projected lost votes from Fulton County
+proj_total_t_fulton_diff <- proj_black_t_fulton_diff + proj_hispanic_t_fulton_diff + proj_asian_t_fulton_diff
+proj_total_t_fulton_diff
+
+```
+"Here, a strict ID law could be expected to depress Latino turnout by 9.3 percentage points, black turnout by 8.6 points, and Asian American turnout by 12.5 points." (https://www-journals-uchicago-edu.ezp-prod1.hul.harvard.edu/doi/pdfplus/10.1086%2F688343)
+
+```{r}
+ia_house_dataverse_2 <- subset(dataverse_2, state == "IOWA")
+```
+
+"In comparison, more than 272,000 Iowans had cast votes by that day in 2014 and 434,000 ballots were requested. One reason for the 2018 numbers being lower is the early voting period was shortened from 40 days to 29 days beginning this year" (https://www.desmoinesregister.com/story/news/politics/2018/10/24/iowa-early-voting-totals-2018-absentee-ballots-vote-election-secretary-state-auditor-polk-county/1739404002/)
+      
+  
